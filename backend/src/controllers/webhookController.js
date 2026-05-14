@@ -7,13 +7,20 @@ const webhookController = {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
+    console.log('Incoming Webhook Verification Request:', { mode, token });
+    console.log('Expected Token:', env.webhookVerifyToken);
+
     if (mode && token) {
       if (mode === 'subscribe' && token === env.webhookVerifyToken) {
-        console.log('WEBHOOK_VERIFIED');
+        console.log('✅ WEBHOOK_VERIFIED');
         res.status(200).send(challenge);
       } else {
+        console.error('❌ WEBHOOK_VERIFICATION_FAILED: Token mismatch');
         res.sendStatus(403);
       }
+    } else {
+      console.warn('⚠️ WEBHOOK_VERIFICATION_FAILED: Missing mode or token');
+      res.sendStatus(400);
     }
   },
 
