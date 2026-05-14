@@ -11,14 +11,28 @@ const aiRouterService = {
 
       if (message.type === 'text') {
         const userQuery = message.text.body;
+        console.log(`Processing text message from ${senderId}: "${userQuery}"`);
         
-        // 1. Search Knowledge Base (RAG)
-        const relevantContexts = await pineconeService.query('business-knowledge', userQuery);
-        const contextString = relevantContexts.map(m => m.metadata.text).join('\n---\n');
+        // 1. Search Knowledge Base (RAG) - With Fallback
+        let contextString = "";
+        try {
+          console.log('Searching Pinecone...');
+          const relevantContexts = await pineconeService.query('business-knowledge', userQuery);
+          contextString = relevantContexts.map(m => m.metadata?.text || "").join('\n---\n');
+          console.log(`Found ${relevantContexts.length} context chunks.`);
+        } catch (ragError) {
+          console.error('⚠️ RAG Error (skipping context):', ragError.message);
+          contextString = "No specific context found.";
+        }
 
-        // 2. Get Chat History
-        console.log('Fetching Chat History...');
-        const history = await firebaseService.getChatHistory(senderId);
+        // 2. Get Chat History - With Fallback
+        let history = [];
+        try {
+          console.log('Fetching Chat History...');
+          history = await firebaseService.getChatHistory(senderId);
+        } catch (dbError) {
+          console.error('⚠️ Database Error (skipping history):', dbError.message);
+        }
         
         // 3. Prepare Prompt for Groq
         const messages = [
@@ -32,12 +46,12 @@ const aiRouterService = {
         responseText = await groqService.chatCompletion(messages);
         console.log('Groq Response Generated.');
 
-        // 5. Save History
-        console.log('Saving to Firebase...');
-        await firebaseService.saveChatMessage(senderId, { from: 'user', text: userQuery, timestamp: new Date().toISOString() });
-        await firebaseService.saveChatMessage(senderId, { from: 'bot', text: responseText, timestamp: new Date().toISOString() });
+        // 5. Save History - Background
+        firebaseService.saveChatMessage(senderId, { from: 'user', text: userQuery, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
+        firebaseService.saveChatMessage(senderId, { from: 'bot', text: responseText, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
 
-      } else if (message.type === 'image') {
+      }
+ else if (message.type === 'image') {
         const mediaId = message.image.id;
         const mediaUrl = await whatsappService.getMediaUrl(mediaId);
         const base64Image = await whatsappService.downloadMedia(mediaUrl);
