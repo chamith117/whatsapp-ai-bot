@@ -27,6 +27,7 @@ app.get('/', (req, res) => {
 
 // Health Check
 app.get('/health', (req, res) => {
+  console.log('✅ Health check request received!');
   res.status(200).json({ status: 'OK', message: 'Backend is running' });
 });
 
