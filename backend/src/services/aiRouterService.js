@@ -47,7 +47,18 @@ const aiRouterService = {
         
         // 3. Prepare Prompt for Groq
         const messages = [
-          { role: 'system', content: `You are a helpful AI WhatsApp Business Assistant. Use the following context to answer customer questions. If the answer is not in the context, use your general knowledge but mention you are not sure. Be concise and professional.\n\nBUSINESS KNOWLEDGE (from PDF):\n${contextString}\n\nCURRENT PRODUCT CATALOG:\n${productString}` },
+          { role: 'system', content: `You are a helpful AI WhatsApp Business Assistant. 
+          Use the context and products below to answer. 
+          
+          ORDERING LOGIC:
+          If the customer clearly wants to order or buy a specific product, confirm the order in your reply and MUST append this exact tag at the very end of your message: 
+          ###ORDER_START###{"product": "Name of Product", "price": "Price", "quantity": 1}###ORDER_END###
+          
+          BUSINESS KNOWLEDGE (from PDF):
+          ${contextString}
+          
+          CURRENT PRODUCT CATALOG:
+          ${productString}` },
           ...history.map(msg => ({ role: msg.from === 'user' ? 'user' : 'assistant', content: msg.text })),
           { role: 'user', content: userQuery }
         ];
@@ -55,9 +66,28 @@ const aiRouterService = {
         // 4. Generate AI Reply
         console.log('Calling Groq API...');
         responseText = await groqService.chatCompletion(messages);
-        console.log('Groq Response Generated.');
+        
+        // 5. Detect and Process Orders
+        if (responseText.includes('###ORDER_START###')) {
+          try {
+            const orderJson = responseText.split('###ORDER_START###')[1].split('###ORDER_END###')[0];
+            const orderData = JSON.parse(orderJson);
+            console.log('🛒 New Order Detected:', orderData);
+            
+            await firebaseService.createOrder({
+              ...orderData,
+              customerPhone: senderId,
+              status: 'pending'
+            });
+            
+            // Clean up the response text for the user
+            responseText = responseText.split('###ORDER_START###')[0].trim();
+          } catch (orderError) {
+            console.error('Error processing order tag:', orderError);
+          }
+        }
 
-        // 5. Save History - Background
+        // 6. Save History
         firebaseService.saveChatMessage(senderId, { from: 'user', text: userQuery, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
         firebaseService.saveChatMessage(senderId, { from: 'bot', text: responseText, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
 
