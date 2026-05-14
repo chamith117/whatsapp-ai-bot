@@ -10,11 +10,11 @@ const env = {
   whatsappToken: process.env.WHATSAPP_TOKEN,
   whatsappPhoneId: process.env.WHATSAPP_PHONE_ID,
   webhookVerifyToken: process.env.WEBHOOK_VERIFY_TOKEN,
-  firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID ? process.env.FIREBASE_PROJECT_ID.replace(/^"/, '').replace(/"$/, '') : '',
   firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY 
     ? process.env.FIREBASE_PRIVATE_KEY.replace(/^"/, '').replace(/"$/, '').replace(/\\n/g, '\n') 
     : '',
-  firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL ? process.env.FIREBASE_CLIENT_EMAIL.replace(/^"/, '').replace(/"$/, '') : '',
 };
 
 module.exports = env;
