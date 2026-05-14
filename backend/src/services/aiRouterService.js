@@ -25,6 +25,17 @@ const aiRouterService = {
           contextString = "No specific context found.";
         }
 
+        // 1b. Fetch Products from Inventory
+        let productString = "";
+        try {
+          console.log('Fetching Products...');
+          const products = await firebaseService.getProducts();
+          productString = products.map(p => `- ${p.name}: ${p.description} (Price: ${p.price})`).join('\n');
+          console.log(`Found ${products.length} products.`);
+        } catch (prodError) {
+          console.error('⚠️ Product Fetch Error:', prodError.message);
+        }
+        
         // 2. Get Chat History - With Fallback
         let history = [];
         try {
@@ -36,7 +47,7 @@ const aiRouterService = {
         
         // 3. Prepare Prompt for Groq
         const messages = [
-          { role: 'system', content: `You are a helpful AI WhatsApp Business Assistant. Use the following context to answer customer questions. If the answer is not in the context, use your general knowledge but mention you are not sure. Be concise and professional.\n\nContext:\n${contextString}` },
+          { role: 'system', content: `You are a helpful AI WhatsApp Business Assistant. Use the following context to answer customer questions. If the answer is not in the context, use your general knowledge but mention you are not sure. Be concise and professional.\n\nBUSINESS KNOWLEDGE (from PDF):\n${contextString}\n\nCURRENT PRODUCT CATALOG:\n${productString}` },
           ...history.map(msg => ({ role: msg.from === 'user' ? 'user' : 'assistant', content: msg.text })),
           { role: 'user', content: userQuery }
         ];
