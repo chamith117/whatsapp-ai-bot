@@ -17,6 +17,7 @@ const aiRouterService = {
         const contextString = relevantContexts.map(m => m.metadata.text).join('\n---\n');
 
         // 2. Get Chat History
+        console.log('Fetching Chat History...');
         const history = await firebaseService.getChatHistory(senderId);
         
         // 3. Prepare Prompt for Groq
@@ -27,9 +28,12 @@ const aiRouterService = {
         ];
 
         // 4. Generate AI Reply
+        console.log('Calling Groq API...');
         responseText = await groqService.chatCompletion(messages);
+        console.log('Groq Response Generated.');
 
         // 5. Save History
+        console.log('Saving to Firebase...');
         await firebaseService.saveChatMessage(senderId, { from: 'user', text: userQuery, timestamp: new Date().toISOString() });
         await firebaseService.saveChatMessage(senderId, { from: 'bot', text: responseText, timestamp: new Date().toISOString() });
 
