@@ -1,0 +1,34 @@
+const express = require('express');
+const cors = require('cors');
+
+const webhookRoutes = require('./routes/webhook');
+const aiRoutes = require('./routes/ai');
+const orderRoutes = require('./routes/orders');
+const productRoutes = require('./routes/products');
+
+const app = express();
+
+app.use(cors());
+// WhatsApp Webhook verification expects raw body or normal json
+// However, some hooks might need raw body if checking signature. For now we use express.json()
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Backend is running' });
+});
+
+// Register Routes
+app.use('/webhook', webhookRoutes);
+app.use('/ai', aiRoutes);
+app.use('/orders', orderRoutes);
+app.use('/products', productRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+module.exports = app;

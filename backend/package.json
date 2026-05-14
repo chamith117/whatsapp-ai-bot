@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.2",
+    "@pinecone-database/pinecone": "^7.2.0",
+    "@xenova/transformers": "^2.17.2",
+    "axios": "^1.16.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.9.0",
+    "groq-sdk": "^1.2.0",
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5"
+  }
+}
