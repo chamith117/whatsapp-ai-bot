@@ -1,4 +1,4 @@
-# AI WhatsApp Business Assistant (SaaS-ready)
+# AI WhatsApp Business Assistant
 
 A production-ready WhatsApp chatbot system with an AI chat engine (Groq), image recognition (Claude Vision), RAG knowledge base (Pinecone), and a modern admin dashboard (Next.js 14).
 
@@ -63,5 +63,4 @@ node scripts/seed.js
 
 ---
 
-## 📝 License
-MIT
+
