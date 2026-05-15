@@ -50,6 +50,13 @@ const pineconeService = {
       includeMetadata: true,
     });
     return queryResponse.matches;
+  },
+  
+  deleteByMetadata: async (indexName, filter) => {
+    const index = pc.index(indexName);
+    console.log(`Deleting vectors from Pinecone with filter:`, filter);
+    await index.deleteMany({ filter });
+    return true;
   }
 };
 

@@ -84,6 +84,26 @@ const firebaseService = {
   getChatHistory: async (whatsappId) => {
     const doc = await db.collection('chats').doc(whatsappId).get();
     return doc.exists ? doc.data().messages : [];
+  },
+
+  // Knowledge Base Management
+  getKnowledgeBase: async () => {
+    const snapshot = await db.collection('knowledge_base').orderBy('uploadedAt', 'desc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  },
+  saveKnowledgeEntry: async (filename, stats) => {
+    const docId = filename.replace(/[^a-zA-Z0-9]/g, '_');
+    const data = {
+      filename,
+      ...stats,
+      uploadedAt: new Date().toISOString()
+    };
+    await db.collection('knowledge_base').doc(docId).set(data);
+    return data;
+  },
+  deleteKnowledgeEntry: async (id) => {
+    await db.collection('knowledge_base').doc(id).delete();
+    return true;
   }
 };
 
