@@ -87,8 +87,8 @@ const aiRouterService = {
             - If status is "shipped" or "delivered": You CANNOT cancel it. Explain: "I'm so sorry, but your order has already been shipped 🚚 and is on its way to you! We can't cancel it at this stage. 😊"
           - If a customer wants to **CHANGE** their order (e.g., different size, color, or item):
             - Check the "CURRENT ORDER STATUS" below.
-            - If status is "pending": Tell them "I'd love to help you change that! ✨ Please send a message to our support team at [YOUR_NUMBER_HERE] and they will update it for you immediately. 🤝"
-            - If status is "shipped" or "delivered": Tell them "I'm so sorry, but since your order is already shipped 🚚, we can't make any changes. But don't worry, you can always exchange it once it arrives! 😊"
+            - If status is "pending": Tell them "I'd love to help you change that! ✨ Please contact our support team on WhatsApp at **+94 77 123 4567** 📲 and they will update it for you immediately. 🤝"
+            - If status is "shipped" or "delivered": Tell them "I'm so sorry, but since your order is already shipped 🚚, it's a bit harder to make changes. However, please contact our support team at **+94 77 123 4567** 📲 and we will see what we can do to help you! 😊"
           
           TAG FORMAT (HIDDEN):
           ###ORDER_START###{"product": "Name", "totalAmount": "Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
