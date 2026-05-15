@@ -168,7 +168,7 @@ export default function OrdersPage() {
           <Card className="max-w-md w-full">
             <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
               <CardTitle>Order Details</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>✕</Button>
+              <Button variant="outline" onClick={() => setSelectedOrder(null)}>✕</Button>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
