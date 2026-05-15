@@ -96,6 +96,7 @@ export default function OrdersPage() {
                   <tr className="border-b border-slate-100">
                     <th className="pb-4 font-semibold text-slate-600">Order ID</th>
                     <th className="pb-4 font-semibold text-slate-600">Customer</th>
+                    <th className="pb-4 font-semibold text-slate-600">Phone</th>
                     <th className="pb-4 font-semibold text-slate-600">Product</th>
                     <th className="pb-4 font-semibold text-slate-600">Address</th>
                     <th className="pb-4 font-semibold text-slate-600">Amount</th>
@@ -114,7 +115,9 @@ export default function OrdersPage() {
                         <td className="py-4 font-mono text-xs text-slate-500">#{order.id.slice(-8).toUpperCase()}</td>
                         <td className="py-4">
                           <div className="font-medium text-slate-900">{order.customerName || "WhatsApp User"}</div>
-                          <div className="text-xs text-slate-500">{order.whatsappId}</div>
+                        </td>
+                        <td className="py-4 text-xs font-mono text-slate-500">
+                          {order.whatsappId}
                         </td>
                         <td className="py-4 text-sm text-slate-600">
                           {order.product || "Unknown Product"}

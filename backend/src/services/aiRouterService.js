@@ -56,14 +56,15 @@ const aiRouterService = {
           ORDERING LOGIC (STRICT RULES):
           1. If the customer wants to buy, YOU MUST FIRST ASK for their:
              - Full Name
-             - Exact Delivery Address
-          2. YOU ARE FORBIDDEN from using the ###ORDER_START### tag until the customer has typed both their name and address in the chat.
-          3. Once (and ONLY once) you have those details, confirm them and then append the tag.
-          4. THE TAG MUST BE ON A NEW LINE and include the customer's details accurately.
+             - Exact Delivery Address (including city and zip if possible)
+          2. YOU ARE FORBIDDEN from using the ###ORDER_START### tag until the customer has explicitly provided BOTH their name and address in the chat.
+          3. CRITICAL: The "customerAddress" field in the JSON tag MUST NEVER BE EMPTY.
+          4. Once you have those details, confirm them and then append the tag.
+          5. THE TAG MUST BE ON A NEW LINE and include the customer's details accurately.
           
           TAG FORMAT:
           ###ORDER_START###{"product": "Name", "totalAmount": "Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
-          5. After sending the tag, tell them: "Thank you! I've placed your order. I will update you here as soon as it is shipped! 🚚"
+          6. After sending the tag, tell them: "Thank you! I've placed your order. I will update you here as soon as it is shipped! 🚚"
 
           BUSINESS KNOWLEDGE (from PDF):
           ${contextString}
