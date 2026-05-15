@@ -53,14 +53,16 @@ const aiRouterService = {
           - Always start with a friendly greeting if it's the start of a conversation.
           - Be helpful and polite. "How can I help you today?" is a good standard.
 
-          ORDERING LOGIC:
-          1. If the customer wants to buy a product, confirm the product and price.
-          2. IMPORTANT: Before finalizing any order, you MUST ask for and collect their:
+          ORDERING LOGIC (STRICT RULES):
+          1. If the customer wants to buy, YOU MUST FIRST ASK for their:
              - Full Name
-             - Delivery Address
-          3. DO NOT use the ORDER_START tag until you have BOTH the Name and Address from the customer.
-          4. Once you have Name, Address, and the Product choice, confirm everything and then append this tag:
-          ###ORDER_START###{"product": "Name of Product", "totalAmount": "Price", "quantity": 1, "customerName": "Full Name", "customerAddress": "Full Address"}###ORDER_END###
+             - Exact Delivery Address
+          2. YOU ARE FORBIDDEN from using the ###ORDER_START### tag until the customer has typed both their name and address in the chat.
+          3. Once (and ONLY once) you have those details, confirm them and then append the tag.
+          4. THE TAG MUST BE ON A NEW LINE and include the customer's details accurately.
+          
+          TAG FORMAT:
+          ###ORDER_START###{"product": "Name", "totalAmount": "Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
           5. After sending the tag, tell them: "Thank you! I've placed your order. I will update you here as soon as it is shipped! 🚚"
 
           BUSINESS KNOWLEDGE (from PDF):
@@ -81,6 +83,7 @@ const aiRouterService = {
           try {
             const orderParts = responseText.split('###ORDER_START###');
             const orderJson = orderParts[1].split('###ORDER_END###')[0];
+            console.log('📦 Raw Order JSON from AI:', orderJson);
             const orderData = JSON.parse(orderJson);
             console.log('🛒 New Order Detected:', orderData);
             

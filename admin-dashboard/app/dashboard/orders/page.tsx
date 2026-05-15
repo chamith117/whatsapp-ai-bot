@@ -36,7 +36,16 @@ export default function OrdersPage() {
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${orderId}/status`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      
+      if (!backendUrl) {
+        console.error("NEXT_PUBLIC_BACKEND_URL is not set. Falling back to direct database update.");
+        await updateDoc(doc(db, "orders", orderId), { status: newStatus });
+        fetchOrders();
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -45,8 +54,9 @@ export default function OrdersPage() {
       if (response.ok) {
         fetchOrders();
       } else {
-        console.error("Failed to update status via backend");
-        // Fallback to direct DB update if backend fails
+        const errorData = await response.json();
+        console.error("Backend update failed:", errorData);
+        // Fallback
         await updateDoc(doc(db, "orders", orderId), { status: newStatus });
         fetchOrders();
       }

@@ -14,8 +14,10 @@ const orderController = {
     try {
       const { id } = req.params;
       const { status } = req.body;
+      console.log(`📦 Updating order ${id} status to: ${status}`);
       
       const updatedOrder = await firebaseService.updateOrderStatus(id, status);
+      console.log(`✅ Order updated in DB. Customer Phone: ${updatedOrder.customerPhone}`);
       
       // Notify customer if shipped or delivered
       if ((status === 'shipped' || status === 'delivered') && updatedOrder.customerPhone) {
@@ -26,13 +28,14 @@ const orderController = {
           message = `Your order for *${updatedOrder.product}* has been delivered! 📦 We hope you love it. Thank you for choosing us!`;
         }
         
-        await whatsappService.sendMessage(updatedOrder.customerPhone, message).catch(err => {
-          console.error('Failed to send status update WhatsApp:', err);
-        });
+        console.log(`📲 Sending WhatsApp notification to ${updatedOrder.customerPhone}...`);
+        await whatsappService.sendMessage(updatedOrder.customerPhone, message);
+        console.log('✅ Notification sent successfully!');
       }
       
       res.json(updatedOrder);
     } catch (error) {
+      console.error('❌ Order Status Update Error:', error);
       res.status(500).json({ error: error.message });
     }
   }
