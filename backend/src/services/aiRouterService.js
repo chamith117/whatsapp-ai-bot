@@ -45,6 +45,17 @@ const aiRouterService = {
           console.error('⚠️ Database Error (skipping history):', dbError.message);
         }
         
+        // 1c. Fetch Latest Order Status
+        let latestOrderInfo = "No active orders found.";
+        try {
+          const latestOrder = await firebaseService.getLatestOrder(senderId);
+          if (latestOrder) {
+            latestOrderInfo = `Latest Order: ${latestOrder.product} | Status: ${latestOrder.status} | ID: ${latestOrder.id}`;
+          }
+        } catch (orderError) {
+          console.error('⚠️ Error fetching latest order:', orderError.message);
+        }
+        
         // 3. Prepare Prompt for Groq
         const messages = [
           { role: 'system', content: `You are a high-performing, charming, and professional Human Sales Agent for a premium clothing boutique. 🎩✨
@@ -69,6 +80,12 @@ const aiRouterService = {
           5. **The Trigger**: ONLY if they say "Yes", "Confirm", "Perfect", etc., append the ###ORDER_START### tag.
           6. **The Hand-off**: After the tag, say: "Done! 🚀 Your order is in the system. I'll personally make sure it's packed beautifully for you!"
           
+          CANCELLATION LOGIC:
+          - If a customer wants to cancel their order:
+            - Check the "CURRENT ORDER STATUS" below.
+            - If status is "pending": You CAN cancel it. Tell them "No problem! I've cancelled that for you. 🗑️" and append the tag: ###CANCEL_ORDER###{"id": "ORDER_ID_HERE"}###
+            - If status is "shipped" or "delivered": You CANNOT cancel it. Politely explain: "I'm so sorry, but your order has already been shipped 🚚 and is on its way to you! We can't cancel it at this stage, but you can always reach out for a return once it arrives. 😊"
+          
           TAG FORMAT (HIDDEN):
           ###ORDER_START###{"product": "Name", "totalAmount": "Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
 
@@ -76,7 +93,10 @@ const aiRouterService = {
           ${contextString}
           
           CURRENT PRODUCT CATALOG:
-          ${productString}` },
+          ${productString}
+          
+          CURRENT ORDER STATUS FOR THIS CUSTOMER:
+          ${latestOrderInfo}` },
           ...history.map(msg => ({ role: msg.from === 'user' ? 'user' : 'assistant', content: msg.text })),
           { role: 'user', content: userQuery }
         ];
@@ -85,26 +105,38 @@ const aiRouterService = {
         console.log('Calling Groq API...');
         responseText = await groqService.chatCompletion(messages);
         
-        // 5. Detect and Process Orders
+        // 5. Detect and Process Orders/Cancellations
         if (responseText.includes('###ORDER_START###')) {
           try {
             const orderParts = responseText.split('###ORDER_START###');
             const orderJson = orderParts[1].split('###ORDER_END###')[0];
-            console.log('📦 Raw Order JSON from AI:', orderJson);
             const orderData = JSON.parse(orderJson);
-            console.log('🛒 New Order Detected:', orderData);
             
             await firebaseService.createOrder({
               ...orderData,
               customerPhone: senderId,
-              whatsappId: senderId, // Add this for dashboard compatibility
+              whatsappId: senderId,
               status: 'pending'
             });
             
-            // Clean up the response text for the user
             responseText = orderParts[0].trim();
           } catch (orderError) {
             console.error('Error processing order tag:', orderError);
+          }
+        }
+
+        if (responseText.includes('###CANCEL_ORDER###')) {
+          try {
+            const cancelParts = responseText.split('###CANCEL_ORDER###');
+            const cancelJson = cancelParts[1].split('###')[0];
+            const cancelData = JSON.parse(cancelJson);
+            
+            await firebaseService.cancelOrder(cancelData.id);
+            console.log(`🗑️ Order ${cancelData.id} cancelled successfully.`);
+            
+            responseText = cancelParts[0].trim();
+          } catch (cancelError) {
+            console.error('Error processing cancel tag:', cancelError);
           }
         }
 

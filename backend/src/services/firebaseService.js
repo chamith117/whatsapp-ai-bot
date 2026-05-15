@@ -43,6 +43,21 @@ const firebaseService = {
     const updatedDoc = await docRef.get();
     return { id: updatedDoc.id, ...updatedDoc.data() };
   },
+  getLatestOrder: async (whatsappId) => {
+    const snapshot = await db.collection('orders')
+      .where('whatsappId', '==', whatsappId)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+    
+    if (snapshot.empty) return null;
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() };
+  },
+  cancelOrder: async (orderId) => {
+    await db.collection('orders').doc(orderId).update({ status: 'cancelled' });
+    return true;
+  },
 
   // Chats/Sessions
   saveChatMessage: async (whatsappId, message) => {
