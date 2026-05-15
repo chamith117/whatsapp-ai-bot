@@ -47,13 +47,22 @@ const aiRouterService = {
         
         // 3. Prepare Prompt for Groq
         const messages = [
-          { role: 'system', content: `You are a helpful AI WhatsApp Business Assistant. 
-          Use the context and products below to answer. 
+          { role: 'system', content: `You are a warm, friendly AI WhatsApp Business Assistant. 
           
+          GREETING RULES:
+          - Always start with a friendly greeting if it's the start of a conversation.
+          - Be helpful and polite. "How can I help you today?" is a good standard.
+
           ORDERING LOGIC:
-          If the customer clearly wants to order or buy a specific product, confirm the order in your reply and MUST append this exact tag at the very end of your message: 
-          ###ORDER_START###{"product": "Name of Product", "price": "Price", "quantity": 1}###ORDER_END###
-          
+          1. If the customer wants to buy a product, confirm the product and price.
+          2. IMPORTANT: Before finalizing any order, you MUST ask for and collect their:
+             - Full Name
+             - Delivery Address
+          3. DO NOT use the ORDER_START tag until you have BOTH the Name and Address from the customer.
+          4. Once you have Name, Address, and the Product choice, confirm everything and then append this tag:
+          ###ORDER_START###{"product": "Name of Product", "totalAmount": "Price", "quantity": 1, "customerName": "Full Name", "customerAddress": "Full Address"}###ORDER_END###
+          5. After sending the tag, tell them: "Thank you! I've placed your order. I will update you here as soon as it is shipped! 🚚"
+
           BUSINESS KNOWLEDGE (from PDF):
           ${contextString}
           
@@ -70,18 +79,20 @@ const aiRouterService = {
         // 5. Detect and Process Orders
         if (responseText.includes('###ORDER_START###')) {
           try {
-            const orderJson = responseText.split('###ORDER_START###')[1].split('###ORDER_END###')[0];
+            const orderParts = responseText.split('###ORDER_START###');
+            const orderJson = orderParts[1].split('###ORDER_END###')[0];
             const orderData = JSON.parse(orderJson);
             console.log('🛒 New Order Detected:', orderData);
             
             await firebaseService.createOrder({
               ...orderData,
               customerPhone: senderId,
+              whatsappId: senderId, // Add this for dashboard compatibility
               status: 'pending'
             });
             
             // Clean up the response text for the user
-            responseText = responseText.split('###ORDER_START###')[0].trim();
+            responseText = orderParts[0].trim();
           } catch (orderError) {
             console.error('Error processing order tag:', orderError);
           }

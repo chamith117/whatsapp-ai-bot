@@ -36,12 +36,26 @@ export default function OrdersPage() {
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-      fetchOrders();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        fetchOrders();
+      } else {
+        console.error("Failed to update status via backend");
+        // Fallback to direct DB update if backend fails
+        await updateDoc(doc(db, "orders", orderId), { status: newStatus });
+        fetchOrders();
+      }
     } catch (error) {
       console.error("Error updating status:", error);
     }
   };
+
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   return (
     <div className="space-y-6">
@@ -49,12 +63,6 @@ export default function OrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Orders Management</h1>
           <p className="text-slate-500">Track and manage customer orders from WhatsApp.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter size={18} />
-            Filter
-          </Button>
         </div>
       </div>
 
@@ -78,9 +86,9 @@ export default function OrdersPage() {
                   <tr className="border-b border-slate-100">
                     <th className="pb-4 font-semibold text-slate-600">Order ID</th>
                     <th className="pb-4 font-semibold text-slate-600">Customer</th>
+                    <th className="pb-4 font-semibold text-slate-600">Address</th>
                     <th className="pb-4 font-semibold text-slate-600">Amount</th>
                     <th className="pb-4 font-semibold text-slate-600">Status</th>
-                    <th className="pb-4 font-semibold text-slate-600">Date</th>
                     <th className="pb-4 font-semibold text-slate-600 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -97,6 +105,9 @@ export default function OrdersPage() {
                           <div className="font-medium text-slate-900">{order.customerName || "WhatsApp User"}</div>
                           <div className="text-xs text-slate-500">{order.whatsappId}</div>
                         </td>
+                        <td className="py-4 text-sm text-slate-600 max-w-[200px] truncate">
+                          {order.customerAddress || "No address provided"}
+                        </td>
                         <td className="py-4 font-semibold text-slate-900">${order.totalAmount}</td>
                         <td className="py-4">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${config.bg} ${config.color} ${config.border}`}>
@@ -104,22 +115,22 @@ export default function OrdersPage() {
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </span>
                         </td>
-                        <td className="py-4 text-sm text-slate-600">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </td>
                         <td className="py-4 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-2">
                             <select 
                               onChange={(e) => updateStatus(order.id, e.target.value)}
                               value={status}
                               className="text-xs border rounded px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-emerald-500"
                             >
                               <option value="pending">Pending</option>
-                              <option value="processing">Processing</option>
+                              <option value="shipped">Shipped</option>
                               <option value="delivered">Delivered</option>
                               <option value="cancelled">Cancelled</option>
                             </select>
-                            <button className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                            <button 
+                              onClick={() => setSelectedOrder(order)}
+                              className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                            >
                               <Eye size={18} />
                             </button>
                           </div>
@@ -127,19 +138,48 @@ export default function OrdersPage() {
                       </tr>
                     );
                   })}
-                  {orders.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-500">
-                        No orders yet. They will appear here when customers order via WhatsApp.
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Basic Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+              <CardTitle>Order Details</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>✕</Button>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Customer Name</label>
+                  <p className="font-medium">{selectedOrder.customerName}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
+                  <p className="font-medium">{selectedOrder.whatsappId}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase">Delivery Address</label>
+                <p className="font-medium">{selectedOrder.customerAddress}</p>
+              </div>
+              <div className="border-t pt-4">
+                <label className="text-xs font-bold text-slate-400 uppercase">Product</label>
+                <div className="flex justify-between items-center">
+                  <p className="font-medium">{selectedOrder.product}</p>
+                  <p className="font-bold">${selectedOrder.totalAmount}</p>
+                </div>
+              </div>
+              <Button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700" onClick={() => setSelectedOrder(null)}>Close</Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

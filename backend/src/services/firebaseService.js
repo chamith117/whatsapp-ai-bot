@@ -38,8 +38,10 @@ const firebaseService = {
     return { id: docRef.id, ...orderData };
   },
   updateOrderStatus: async (id, status) => {
-    await db.collection('orders').doc(id).update({ status });
-    return { id, status };
+    const docRef = db.collection('orders').doc(id);
+    await docRef.update({ status });
+    const updatedDoc = await docRef.get();
+    return { id: updatedDoc.id, ...updatedDoc.data() };
   },
 
   // Chats/Sessions
