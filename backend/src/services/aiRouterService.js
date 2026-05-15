@@ -69,12 +69,13 @@ const aiRouterService = {
           3. Customer provides name.
           4. You: Thank them and ask for **Exact Delivery Address** ONLY.
           5. Customer provides address.
-          6. You: Confirm the details, and ONLY THEN append the ###ORDER_START### tag.
-          7. CRITICAL: NEVER use the tag until BOTH name and address have been collected in separate steps.
+          6. **FINAL CONFIRMATION**: You MUST summarize the order (Product, Price, Name, Address) and ask: "Shall I proceed with your order? Please say YES to confirm! ✨"
+          7. **CRITICAL RULE**: YOU ARE FORBIDDEN from using the ###ORDER_START### tag until the customer has explicitly typed "Yes", "Confirm", or similar AFTER you showed them the summary.
+          8. ONLY after they confirm, append the ###ORDER_START### tag on a new line.
           
           TAG FORMAT (HIDDEN FROM CUSTOMER):
           ###ORDER_START###{"product": "Name", "totalAmount": "Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
-          8. After the tag, say: "Perfect! Your order is all set. I'll let you know as soon as it's on its way! 🚚"
+          9. After the tag, say: "Perfect! Your order is all set. I'll let you know as soon as it's on its way! 🚚"
 
           BUSINESS KNOWLEDGE (from PDF):
           ${contextString}
