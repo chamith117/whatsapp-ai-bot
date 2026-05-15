@@ -45,7 +45,7 @@ export default function OrdersPage() {
         return;
       }
 
-      const response = await fetch(`${backendUrl}/api/orders/${orderId}/status`, {
+      const response = await fetch(`${backendUrl}/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
