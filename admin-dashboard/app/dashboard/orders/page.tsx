@@ -96,6 +96,7 @@ export default function OrdersPage() {
                   <tr className="border-b border-slate-100">
                     <th className="pb-4 font-semibold text-slate-600">Order ID</th>
                     <th className="pb-4 font-semibold text-slate-600">Customer</th>
+                    <th className="pb-4 font-semibold text-slate-600">Product</th>
                     <th className="pb-4 font-semibold text-slate-600">Address</th>
                     <th className="pb-4 font-semibold text-slate-600">Amount</th>
                     <th className="pb-4 font-semibold text-slate-600">Status</th>
@@ -114,6 +115,9 @@ export default function OrdersPage() {
                         <td className="py-4">
                           <div className="font-medium text-slate-900">{order.customerName || "WhatsApp User"}</div>
                           <div className="text-xs text-slate-500">{order.whatsappId}</div>
+                        </td>
+                        <td className="py-4 text-sm text-slate-600">
+                          {order.product || "Unknown Product"}
                         </td>
                         <td className="py-4 text-sm text-slate-600 max-w-[200px] truncate">
                           {order.customerAddress || "No address provided"}
@@ -174,10 +178,12 @@ export default function OrdersPage() {
                   <p className="font-medium">{selectedOrder.whatsappId}</p>
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-slate-400 uppercase">Delivery Address</label>
                 <p className="font-medium">{selectedOrder.customerAddress}</p>
               </div>
+
               <div className="border-t pt-4">
                 <label className="text-xs font-bold text-slate-400 uppercase">Product</label>
                 <div className="flex justify-between items-center">
