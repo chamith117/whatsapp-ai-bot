@@ -114,6 +114,10 @@ const firebaseService = {
     const doc = await db.collection('chats').doc(whatsappId).get();
     return doc.exists ? doc.data().messages : [];
   },
+  getAllChats: async () => {
+    const snapshot = await db.collection('chats').orderBy('updatedAt', 'desc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  },
 
   // Knowledge Base Management
   getKnowledgeBase: async () => {

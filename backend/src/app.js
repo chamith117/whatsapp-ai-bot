@@ -5,6 +5,7 @@ const webhookRoutes = require('./routes/webhook');
 const aiRoutes = require('./routes/ai');
 const orderRoutes = require('./routes/orders');
 const productRoutes = require('./routes/products');
+const chatRoutes = require('./routes/chats');
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/webhook', webhookRoutes);
 app.use('/ai', aiRoutes);
 app.use('/orders', orderRoutes);
 app.use('/products', productRoutes);
+app.use('/chats', chatRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
