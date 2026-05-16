@@ -225,32 +225,47 @@ export default function RAGPage() {
                   <p className="text-sm font-bold">The brain is empty. Upload a PDF to start.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-100">
                   {docs.map((doc) => (
-                    <div key={doc.id} className={`p-5 flex items-center justify-between group transition-colors ${doc.profile === activeProfile ? 'bg-emerald-50/20' : ''}`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl ${doc.profile === activeProfile ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                          <FileText size={20} />
+                    <div 
+                      key={doc.id} 
+                      className={`p-6 flex items-center justify-between group transition-all hover:bg-slate-50/50 ${doc.profile === activeProfile ? 'bg-emerald-50/10 border-l-4 border-l-emerald-500' : 'border-l-4 border-l-transparent'}`}
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className={`p-4 rounded-2xl shadow-sm ${doc.profile === activeProfile ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                          <FileText size={24} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{doc.filename}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md">
+                          <p className="font-black text-slate-900 text-base">{doc.filename}</p>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${doc.profile === activeProfile ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
                               {doc.profile || "Default"}
                             </span>
-                            <span className="text-[10px] text-slate-400">•</span>
-                            <span className="text-[10px] font-bold text-slate-400">
-                              {doc.chunks} units • {new Date(doc.uploadedAt).toLocaleDateString()}
+                            <span className="text-slate-300">|</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              {doc.chunks} units
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              {new Date(doc.uploadedAt).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => handleDelete(doc.id, doc.filename)}
-                        className="p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {doc.profile === activeProfile && (
+                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter mr-2 animate-pulse">● In Use</span>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDelete(doc.id, doc.filename)}
+                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100 border-slate-100 h-10 px-4 rounded-xl transition-all"
+                        >
+                          <Trash2 size={16} className="mr-2" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

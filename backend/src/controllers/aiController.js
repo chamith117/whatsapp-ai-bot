@@ -2,7 +2,7 @@ const groqService = require('../services/groqService');
 const pineconeService = require('../services/pineconeService');
 const firebaseService = require('../services/firebaseService');
 const pdf = require('pdf-parse');
-const pdfParse = typeof pdf === 'function' ? pdf : (pdf.default || pdf.PDFParse);
+const pdfParse = pdf.default || pdf;
 
 const aiController = {
   chat: async (req, res) => {
@@ -68,10 +68,25 @@ const aiController = {
       const { profile = 'Default' } = req.body;
       const filename = req.file.originalname;
       const dataBuffer = req.file.buffer;
-      const data = await pdfParse(dataBuffer);
+      
+      console.log(`📂 Processing upload: ${filename} for profile: ${profile}`);
+      
+      let data;
+      try {
+        data = await pdfParse(dataBuffer);
+      } catch (err) {
+        console.error('PDF Parsing Error:', err);
+        return res.status(422).json({ error: 'Failed to parse PDF. Please ensure it is a valid, unencrypted PDF file.' });
+      }
       
       const text = data.text;
       const chunks = text.match(/[\s\S]{1,1000}/g) || [];
+      
+      if (chunks.length === 0) {
+        return res.status(400).json({ error: 'The PDF seems to be empty or has no readable text.' });
+      }
+      
+      console.log(`✂️ Chunked into ${chunks.length} parts.`);
       
       const documents = chunks.map((chunk, index) => ({
         id: `${filename}-${index}`,
@@ -91,6 +106,7 @@ const aiController = {
         size: req.file.size
       }, profile);
       
+      console.log(`✅ Knowledge Base updated successfully!`);
       res.json({ message: 'Knowledge base updated successfully', chunks: chunks.length, profile });
     } catch (error) {
       console.error('RAG Upload Error:', error);
