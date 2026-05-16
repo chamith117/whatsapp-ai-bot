@@ -143,10 +143,24 @@ const aiRouterService = {
           try {
             const cancelParts = responseText.split('###CANCEL_ORDER###');
             const cancelJson = cancelParts[1].split('###')[0];
-            const cancelData = JSON.parse(cancelJson);
+            let cancelData = JSON.parse(cancelJson);
             
-            await firebaseService.cancelOrder(cancelData.id);
-            console.log(`🗑️ Order ${cancelData.id} cancelled successfully.`);
+            let orderIdToCancel = cancelData.id;
+            
+            // If the AI used a placeholder or missing ID, find the latest pending order
+            if (!orderIdToCancel || orderIdToCancel === "ORDER_ID_HERE") {
+              const latestOrder = await firebaseService.getLatestOrder(senderId);
+              if (latestOrder && latestOrder.status === 'pending') {
+                orderIdToCancel = latestOrder.id;
+              }
+            }
+
+            if (orderIdToCancel && orderIdToCancel !== "ORDER_ID_HERE") {
+              await firebaseService.cancelOrder(orderIdToCancel);
+              console.log(`🗑️ Order ${orderIdToCancel} cancelled successfully.`);
+            } else {
+              console.warn('⚠️ Could not find a valid order ID to cancel.');
+            }
             
             responseText = cancelParts[0].trim();
           } catch (cancelError) {

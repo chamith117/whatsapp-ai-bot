@@ -29,6 +29,21 @@ const firebaseService = {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   },
   createOrder: async (data) => {
+    // Prevent duplicate orders (Idempotency check)
+    // Check if an order with same product and amount exists for this user in the last 2 minutes
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const existingOrders = await db.collection('orders')
+      .where('whatsappId', '==', data.whatsappId)
+      .where('product', '==', data.product)
+      .where('totalAmount', '==', data.totalAmount)
+      .where('createdAt', '>=', twoMinutesAgo)
+      .get();
+
+    if (!existingOrders.empty) {
+      console.log('🚫 Duplicate order detected, skipping creation.');
+      return { id: existingOrders.docs[0].id, ...existingOrders.docs[0].data(), duplicate: true };
+    }
+
     const orderData = {
       ...data,
       status: 'pending',
@@ -55,6 +70,10 @@ const firebaseService = {
     return { id: doc.id, ...doc.data() };
   },
   cancelOrder: async (orderId) => {
+    // If ID is missing or "ORDER_ID_HERE", find latest pending order
+    if (!orderId || orderId === "ORDER_ID_HERE") {
+      return false;
+    }
     await db.collection('orders').doc(orderId).update({ status: 'cancelled' });
     return true;
   },
