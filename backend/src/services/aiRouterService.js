@@ -121,21 +121,31 @@ const aiRouterService = {
         
         // 5. Detect and Process Orders/Cancellations
         if (responseText.includes('###ORDER_START###')) {
+          console.log('📦 Order tag detected in AI response!');
           try {
-            const orderParts = responseText.split('###ORDER_START###');
-            const orderJson = orderParts[1].split('###ORDER_END###')[0];
-            const orderData = JSON.parse(orderJson);
-            
-            await firebaseService.createOrder({
-              ...orderData,
-              customerPhone: senderId,
-              whatsappId: senderId,
-              status: 'pending'
-            });
-            
-            responseText = orderParts[0].trim();
+            const orderMatch = responseText.match(/###ORDER_START###([\s\S]*?)###ORDER_END###/);
+            if (orderMatch) {
+              let orderJson = orderMatch[1].trim();
+              
+              // Remove potential markdown backticks
+              orderJson = orderJson.replace(/^```json/, '').replace(/```$/, '').trim();
+              
+              console.log('Parsed Order JSON:', orderJson);
+              const orderData = JSON.parse(orderJson);
+              
+              await firebaseService.createOrder({
+                ...orderData,
+                customerPhone: senderId,
+                whatsappId: senderId,
+                status: 'pending'
+              });
+              
+              // Remove the tag from the message sent to the user
+              responseText = responseText.replace(/###ORDER_START###[\s\S]*?###ORDER_END###/, '').trim();
+              console.log('✅ Order created and tag removed from response.');
+            }
           } catch (orderError) {
-            console.error('Error processing order tag:', orderError);
+            console.error('❌ Error processing order tag:', orderError.message);
           }
         }
 
