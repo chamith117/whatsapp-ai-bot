@@ -91,10 +91,11 @@ const firebaseService = {
     const snapshot = await db.collection('knowledge_base').orderBy('uploadedAt', 'desc').get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   },
-  saveKnowledgeEntry: async (filename, stats) => {
+  saveKnowledgeEntry: async (filename, stats, profile = 'Default') => {
     const docId = filename.replace(/[^a-zA-Z0-9]/g, '_');
     const data = {
       filename,
+      profile,
       ...stats,
       uploadedAt: new Date().toISOString()
     };
@@ -104,6 +105,16 @@ const firebaseService = {
   deleteKnowledgeEntry: async (id) => {
     await db.collection('knowledge_base').doc(id).delete();
     return true;
+  },
+  
+  // Business Profiles
+  getActiveProfile: async () => {
+    const doc = await db.collection('settings').doc('rag_config').get();
+    return doc.exists ? doc.data().activeProfile : 'Default';
+  },
+  setActiveProfile: async (profile) => {
+    await db.collection('settings').doc('rag_config').set({ activeProfile: profile }, { merge: true });
+    return profile;
   }
 };
 

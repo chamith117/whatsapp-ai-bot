@@ -10,22 +10,59 @@ export default function RAGPage() {
   const [docs, setDocs] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  
+  const [activeProfile, setActiveProfile] = useState("Default");
+  const [profiles, setProfiles] = useState(["Default", "Fashion Store", "Tech Support", "Restaurant"]);
+  const [newProfileName, setNewProfileName] = useState("");
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
-    fetchDocs();
+    fetchData();
   }, []);
 
-  const fetchDocs = async () => {
+  const fetchData = async () => {
+    setLoadingDocs(true);
     try {
-      const response = await fetch(`${backendUrl}/ai/rag/list`);
-      const data = await response.json();
-      setDocs(data);
+      const [docsRes, profileRes] = await Promise.all([
+        fetch(`${backendUrl}/ai/rag/list`),
+        fetch(`${backendUrl}/ai/rag/profile`)
+      ]);
+      
+      const docsData = await docsRes.json();
+      const profileData = await profileRes.json();
+      
+      setDocs(docsData);
+      setActiveProfile(profileData.profile || "Default");
+      
+      // Extract unique profiles from docs + defaults
+      const existingProfiles = [...new Set(docsData.map((d: any) => d.profile).filter(Boolean))];
+      setProfiles(Array.from(new Set(["Default", ...existingProfiles, "Fashion Store", "Tech Support", "Restaurant"])));
     } catch (error) {
-      console.error("Error fetching docs:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoadingDocs(false);
+    }
+  };
+
+  const handleProfileChange = async (profile: string) => {
+    setActiveProfile(profile);
+    try {
+      await fetch(`${backendUrl}/ai/rag/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile }),
+      });
+    } catch (error) {
+      console.error("Error setting profile:", error);
+    }
+  };
+
+  const handleAddProfile = () => {
+    if (newProfileName && !profiles.includes(newProfileName)) {
+      setProfiles([...profiles, newProfileName]);
+      handleProfileChange(newProfileName);
+      setNewProfileName("");
     }
   };
 
@@ -38,6 +75,7 @@ export default function RAGPage() {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('profile', activeProfile);
 
     try {
       const response = await fetch(`${backendUrl}/ai/rag/upload`, {
@@ -47,9 +85,9 @@ export default function RAGPage() {
 
       if (!response.ok) throw new Error("Upload failed");
 
-      setStatus({ type: 'success', message: "Knowledge base updated successfully!" });
+      setStatus({ type: 'success', message: `Knowledge added to "${activeProfile}" profile!` });
       setFile(null);
-      fetchDocs();
+      fetchData();
     } catch (error: any) {
       setStatus({ type: 'error', message: error.message });
     } finally {
@@ -68,7 +106,7 @@ export default function RAGPage() {
       });
 
       if (!response.ok) throw new Error("Delete failed");
-      fetchDocs();
+      fetchData();
     } catch (error) {
       console.error("Delete error:", error);
       alert("Failed to delete document.");
@@ -76,23 +114,46 @@ export default function RAGPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Knowledge Base (RAG)</h1>
-        <p className="text-slate-500">Upload and manage PDF documents to train your AI bot.</p>
+    <div className="space-y-6 pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Knowledge Base (RAG)</h1>
+          <p className="text-slate-500 text-sm">Switch between business contexts instantly.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Business Profile</p>
+            <select 
+              value={activeProfile}
+              onChange={(e) => handleProfileChange(e.target.value)}
+              className="bg-emerald-50 text-emerald-700 font-bold px-4 py-2 rounded-xl border border-emerald-100 outline-none cursor-pointer hover:bg-emerald-100 transition-all"
+            >
+              {profiles.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2 items-end">
+            <Input 
+              placeholder="New Profile..." 
+              value={newProfileName}
+              onChange={(e) => setNewProfileName(e.target.value)}
+              className="w-32 h-10 text-xs"
+            />
+            <Button onClick={handleAddProfile} size="sm" className="h-10">Add</Button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="border-emerald-100 shadow-lg shadow-emerald-500/5">
             <CardHeader>
-              <CardTitle>Upload New Document</CardTitle>
+              <CardTitle className="text-lg font-bold">Upload to <span className="text-emerald-600">"{activeProfile}"</span></CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpload} className="space-y-6">
                 <div 
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                    file ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200 hover:border-emerald-400'
+                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
+                    file ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 hover:border-emerald-300 bg-slate-50/30'
                   }`}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
@@ -101,18 +162,18 @@ export default function RAGPage() {
                   }}
                 >
                   <div className="flex flex-col items-center gap-3">
-                    <div className={`p-4 rounded-full ${file ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                    <div className={`p-4 rounded-2xl ${file ? 'bg-emerald-100 text-emerald-600' : 'bg-white shadow-sm text-slate-400'}`}>
                       <Upload size={24} />
                     </div>
                     {file ? (
                       <div>
-                        <p className="font-medium text-slate-900">{file.name}</p>
-                        <p className="text-sm text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p className="font-bold text-slate-900">{file.name}</p>
+                        <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                     ) : (
                       <div>
-                        <p className="font-medium text-slate-900 text-sm">Click to upload or drag and drop</p>
-                        <p className="text-xs text-slate-500">PDF documents only (max 10MB)</p>
+                        <p className="font-bold text-slate-900 text-sm">Drop PDF here to train the AI</p>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Maximum 10MB per file</p>
                       </div>
                     )}
                     <input 
@@ -122,67 +183,73 @@ export default function RAGPage() {
                       id="file-upload" 
                       onChange={(e) => e.target.files && setFile(e.target.files[0])}
                     />
-                    {!file && <Button variant="outline" size="sm" type="button" onClick={() => document.getElementById('file-upload')?.click()}>Select File</Button>}
+                    {!file && <Button variant="outline" size="sm" type="button" onClick={() => document.getElementById('file-upload')?.click()} className="rounded-xl mt-2 font-bold">Choose File</Button>}
                   </div>
                 </div>
 
                 {status && (
-                  <div className={`p-4 rounded-lg flex items-center gap-3 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                    {status.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-                    <span className="text-sm font-medium">{status.message}</span>
+                  <div className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                    {status.type === 'success' ? <CheckCircle2 size={18} strokeWidth={3} /> : <AlertCircle size={18} strokeWidth={3} />}
+                    <span className="text-xs font-black uppercase tracking-wider">{status.message}</span>
                   </div>
                 )}
 
                 <Button 
                   type="submit" 
-                  className="w-full h-10" 
+                  className="w-full h-12 text-sm font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20" 
                   disabled={!file || uploading}
                 >
                   {uploading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="animate-spin" size={18} />
-                      Processing knowledge...
+                      Analyzing knowledge...
                     </span>
-                  ) : "Add to Knowledge Base"}
+                  ) : `Add to ${activeProfile} Knowledge`}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Currently Trained Documents</CardTitle>
+          <Card className="border-slate-100 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">Global Knowledge Base</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {loadingDocs ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="animate-spin text-slate-300" size={32} />
+                <div className="flex justify-center py-20">
+                  <Loader2 className="animate-spin text-emerald-200" size={48} />
                 </div>
               ) : docs.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <FileText className="mx-auto mb-3 opacity-20" size={48} />
-                  <p>No documents uploaded yet.</p>
+                <div className="text-center py-20 text-slate-400 bg-slate-50/20">
+                  <FileText className="mx-auto mb-4 opacity-10" size={64} />
+                  <p className="text-sm font-bold">The brain is empty. Upload a PDF to start.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-50">
                   {docs.map((doc) => (
-                    <div key={doc.id} className="py-4 flex items-center justify-between group">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                    <div key={doc.id} className={`p-5 flex items-center justify-between group transition-colors ${doc.profile === activeProfile ? 'bg-emerald-50/20' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${doc.profile === activeProfile ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
                           <FileText size={20} />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900">{doc.filename}</p>
-                          <p className="text-xs text-slate-500">
-                            {doc.chunks} chunks • {new Date(doc.uploadedAt).toLocaleDateString()}
-                          </p>
+                          <p className="font-bold text-slate-900">{doc.filename}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md">
+                              {doc.profile || "Default"}
+                            </span>
+                            <span className="text-[10px] text-slate-400">•</span>
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {doc.chunks} units • {new Date(doc.uploadedAt).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <button 
                         onClick={() => handleDelete(doc.id, doc.filename)}
-                        className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   ))}
@@ -193,22 +260,31 @@ export default function RAGPage() {
         </div>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="bg-slate-900 text-white border-none shadow-2xl">
             <CardHeader>
-              <CardTitle>RAG Guidelines</CardTitle>
+              <CardTitle className="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                <CheckCircle2 size={20} />
+                Production Tips
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3 text-xs">
-                <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold shrink-0">1</div>
-                <p className="text-slate-600">Ensure PDFs have selectable text (not scanned images).</p>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Business Context</p>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  The AI only uses knowledge from the **Active Profile**. You can switch business logic instantly by changing the profile above.
+                </p>
               </div>
-              <div className="flex gap-3 text-xs">
-                <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold shrink-0">2</div>
-                <p className="text-slate-600">Include clear headings for better retrieval accuracy.</p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Retrieval Quality</p>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  Deleting a file removes it from AI memory. Upload clear PDFs with bold headings for best results.
+                </p>
               </div>
-              <div className="flex gap-3 text-xs">
-                <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold shrink-0">3</div>
-                <p className="text-slate-600">Deleting a file removes its knowledge from the AI.</p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Profile</p>
+                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+                  <p className="text-[10px] font-bold text-emerald-400">Current: {activeProfile}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

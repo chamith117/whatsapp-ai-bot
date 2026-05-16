@@ -41,14 +41,17 @@ const pineconeService = {
     }
   },
 
-  query: async (indexName, queryText, topK = 3) => {
+  query: async (indexName, queryText, topK = 3, filter = null) => {
     const index = pc.index(indexName);
     const queryVector = await pineconeService.generateEmbeddings(queryText);
-    const queryResponse = await index.query({
+    const queryOptions = {
       vector: queryVector,
       topK,
       includeMetadata: true,
-    });
+    };
+    if (filter) queryOptions.filter = filter;
+    
+    const queryResponse = await index.query(queryOptions);
     return queryResponse.matches;
   },
   

@@ -14,6 +14,25 @@ const aiController = {
       res.status(500).json({ error: error.message });
     }
   },
+
+  getProfile: async (req, res) => {
+    try {
+      const profile = await firebaseService.getActiveProfile();
+      res.json({ profile });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  setProfile: async (req, res) => {
+    try {
+      const { profile } = req.body;
+      await firebaseService.setActiveProfile(profile);
+      res.json({ message: `Active business profile set to: ${profile}` });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
   
   getKnowledgeList: async (req, res) => {
     try {
@@ -46,6 +65,7 @@ const aiController = {
     try {
       if (!req.file) return res.status(400).send('No file uploaded.');
       
+      const { profile = 'Default' } = req.body;
       const filename = req.file.originalname;
       const dataBuffer = req.file.buffer;
       const data = await pdfParse(dataBuffer);
@@ -58,6 +78,7 @@ const aiController = {
         text: chunk,
         metadata: {
           filename: filename,
+          profile: profile,
           text: chunk
         }
       }));
@@ -68,9 +89,9 @@ const aiController = {
       await firebaseService.saveKnowledgeEntry(filename, {
         chunks: chunks.length,
         size: req.file.size
-      });
+      }, profile);
       
-      res.json({ message: 'Knowledge base updated successfully', chunks: chunks.length });
+      res.json({ message: 'Knowledge base updated successfully', chunks: chunks.length, profile });
     } catch (error) {
       console.error('RAG Upload Error:', error);
       res.status(500).json({ error: error.message });

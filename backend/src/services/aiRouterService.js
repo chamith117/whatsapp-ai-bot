@@ -13,13 +13,23 @@ const aiRouterService = {
         const userQuery = message.text.body;
         console.log(`Processing text message from ${senderId}: "${userQuery}"`);
         
-        // 1. Search Knowledge Base (RAG) - With Fallback
+        // 1. Search Knowledge Base (RAG) - With Business Profile Filtering
         let contextString = "";
         try {
-          console.log('Searching Pinecone...');
-          const relevantContexts = await pineconeService.query('business-knowledge', userQuery);
+          console.log('Fetching active business profile...');
+          const activeProfile = await firebaseService.getActiveProfile();
+          console.log(`Active Profile: ${activeProfile}`);
+
+          console.log('Searching Pinecone with profile filter...');
+          const relevantContexts = await pineconeService.query(
+            'business-knowledge', 
+            userQuery, 
+            3, 
+            { profile: activeProfile } // Filter by active business
+          );
+          
           contextString = relevantContexts.map(m => m.metadata?.text || "").join('\n---\n');
-          console.log(`Found ${relevantContexts.length} context chunks.`);
+          console.log(`Found ${relevantContexts.length} context chunks for profile: ${activeProfile}`);
         } catch (ragError) {
           console.error('⚠️ RAG Error (skipping context):', ragError.message);
           contextString = "No specific context found.";
