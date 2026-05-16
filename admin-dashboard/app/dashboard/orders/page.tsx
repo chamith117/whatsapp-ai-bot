@@ -91,20 +91,19 @@ export default function OrdersPage() {
             <div className="text-center py-12">Loading orders...</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left border-separate border-spacing-y-2">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="pb-4 font-semibold text-slate-600">Order ID</th>
-                    <th className="pb-4 font-semibold text-slate-600">Customer</th>
-                    <th className="pb-4 font-semibold text-slate-600">Phone</th>
-                    <th className="pb-4 font-semibold text-slate-600">Product</th>
-                    <th className="pb-4 font-semibold text-slate-600">Address</th>
-                    <th className="pb-4 font-semibold text-slate-600">Amount</th>
-                    <th className="pb-4 font-semibold text-slate-600">Status</th>
-                    <th className="pb-4 font-semibold text-slate-600 text-right">Actions</th>
+                  <tr className="text-slate-500 text-sm">
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">ID</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Customer</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Product Info</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Delivery</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Total</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="space-y-2">
                   {orders.map((order) => {
                     const status = (order.status || 'pending').toLowerCase();
                     const config = statusIcons[status as keyof typeof statusIcons] || statusIcons.pending;
@@ -114,34 +113,37 @@ export default function OrdersPage() {
                       <tr 
                         key={order.id} 
                         onClick={() => setSelectedOrder(order)}
-                        className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+                        className="bg-white border border-slate-100 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer rounded-xl group"
                       >
-                        <td className="py-4 font-mono text-xs text-slate-500">#{order.id.slice(-8).toUpperCase()}</td>
-                        <td className="py-4">
-                          <div className="font-medium text-slate-900">{order.customerName || "WhatsApp User"}</div>
+                        <td className="px-4 py-5 font-mono text-[10px] text-slate-400">
+                          #{order.id.slice(-6).toUpperCase()}
                         </td>
-                        <td className="py-4 text-xs font-mono text-slate-500">
-                          {order.whatsappId}
+                        <td className="px-4 py-5">
+                          <div className="font-bold text-slate-900 leading-tight">{order.customerName || "WhatsApp User"}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">{order.whatsappId}</div>
                         </td>
-                        <td className="py-4 text-sm text-slate-600">
-                          {order.product || "Unknown Product"}
+                        <td className="px-4 py-5">
+                          <div className="text-sm font-semibold text-slate-800">{order.product || "Unknown Product"}</div>
+                          <div className="text-xs text-slate-500">Qty: {order.quantity || 1}</div>
                         </td>
-                        <td className="py-4 text-sm text-slate-600 max-w-[150px] truncate">
-                          {order.customerAddress || "No address provided"}
+                        <td className="px-4 py-5">
+                          <div className="text-xs text-slate-700 max-w-[180px] truncate font-medium">
+                            {order.customerAddress || "No address provided"}
+                          </div>
                         </td>
-                        <td className="py-4 font-semibold text-slate-900">${order.totalAmount}</td>
-                        <td className="py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${config.bg} ${config.color} ${config.border}`}>
-                            <Icon size={12} />
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                        <td className="px-4 py-5 font-bold text-emerald-700">${order.totalAmount}</td>
+                        <td className="px-4 py-5">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${config.bg} ${config.color} ${config.border}`}>
+                            <Icon size={10} strokeWidth={3} />
+                            {status}
                           </span>
                         </td>
-                        <td className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-4 py-5 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-3">
                             <select 
                               onChange={(e) => updateStatus(order.id, e.target.value)}
                               value={status}
-                              className="text-xs border rounded px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-emerald-500 cursor-default"
+                              className="text-[10px] font-bold uppercase tracking-wider border-2 border-slate-100 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-emerald-500 transition-all cursor-pointer"
                             >
                               <option value="pending">Pending</option>
                               <option value="shipped">Shipped</option>
@@ -149,10 +151,9 @@ export default function OrdersPage() {
                               <option value="cancelled">Cancelled</option>
                             </select>
                             <button 
-                              onClick={() => setSelectedOrder(order)}
-                              className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                              className="p-2 text-slate-300 group-hover:text-emerald-600 transition-colors"
                             >
-                              <Eye size={18} />
+                              <Eye size={20} />
                             </button>
                           </div>
                         </td>
