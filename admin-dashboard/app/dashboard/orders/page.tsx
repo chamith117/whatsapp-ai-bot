@@ -94,12 +94,10 @@ export default function OrdersPage() {
               <table className="w-full text-left border-separate border-spacing-y-2">
                 <thead>
                   <tr className="text-slate-500 text-sm">
-                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">ID</th>
-                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Customer</th>
-                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Product Info</th>
-                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Delivery</th>
-                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Total</th>
-                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Order ID</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Customer Name</th>
+                    <th className="px-4 py-3 font-semibold uppercase tracking-wider">Price</th>
                     <th className="px-4 py-3 font-semibold uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
@@ -107,7 +105,6 @@ export default function OrdersPage() {
                   {orders.map((order) => {
                     const status = (order.status || 'pending').toLowerCase();
                     const config = statusIcons[status as keyof typeof statusIcons] || statusIcons.pending;
-                    const Icon = config.icon;
                     
                     return (
                       <tr 
@@ -118,38 +115,18 @@ export default function OrdersPage() {
                         <td className="px-4 py-5 font-mono text-[10px] text-slate-400">
                           #{order.id.slice(-6).toUpperCase()}
                         </td>
+                        <td className="px-4 py-5 text-sm font-medium text-slate-600">
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}
+                        </td>
                         <td className="px-4 py-5">
                           <div className="font-bold text-slate-900 leading-tight">{order.customerName || "WhatsApp User"}</div>
-                          <div className="text-xs text-slate-500 mt-0.5">{order.whatsappId}</div>
-                        </td>
-                        <td className="px-4 py-5">
-                          <div className="text-sm font-semibold text-slate-800">{order.product || "Unknown Product"}</div>
-                          <div className="text-xs text-slate-500">Qty: {order.quantity || 1}</div>
-                        </td>
-                        <td className="px-4 py-5">
-                          <div className="text-xs text-slate-700 max-w-[180px] truncate font-medium">
-                            {order.customerAddress || "No address provided"}
-                          </div>
                         </td>
                         <td className="px-4 py-5 font-bold text-emerald-700">${order.totalAmount}</td>
-                        <td className="px-4 py-5">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${config.bg} ${config.color} ${config.border}`}>
-                            <Icon size={10} strokeWidth={3} />
-                            {status}
-                          </span>
-                        </td>
                         <td className="px-4 py-5 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-3">
-                            <select 
-                              onChange={(e) => updateStatus(order.id, e.target.value)}
-                              value={status}
-                              className="text-[10px] font-bold uppercase tracking-wider border-2 border-slate-100 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-emerald-500 transition-all cursor-pointer"
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="shipped">Shipped</option>
-                              <option value="delivered">Delivered</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${config.bg} ${config.color} ${config.border}`}>
+                              {status}
+                            </span>
                             <button 
                               className="p-2 text-slate-300 group-hover:text-emerald-600 transition-colors"
                             >
@@ -169,37 +146,67 @@ export default function OrdersPage() {
 
       {/* Basic Order Detail Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full">
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-              <CardTitle>Order Details</CardTitle>
-              <Button variant="outline" onClick={() => setSelectedOrder(null)}>✕</Button>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full shadow-2xl border-emerald-100 overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b p-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase">Customer Name</label>
-                  <p className="font-medium">{selectedOrder.customerName}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Order ID</p>
+                  <CardTitle className="text-xl font-bold text-slate-900">#{selectedOrder.id.slice(-8).toUpperCase()}</CardTitle>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)} className="rounded-full w-8 h-8 p-0">✕</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Customer Name</label>
+                  <p className="font-bold text-slate-900">{selectedOrder.customerName || "WhatsApp User"}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
-                  <p className="font-medium">{selectedOrder.whatsappId}</p>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">WhatsApp Phone</label>
+                  <p className="font-bold text-slate-900">{selectedOrder.whatsappId}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase">Delivery Address</label>
-                <p className="font-medium">{selectedOrder.customerAddress}</p>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Delivery Address</label>
+                <p className="text-sm font-medium text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  {selectedOrder.customerAddress || "No address provided"}
+                </p>
               </div>
 
-              <div className="border-t pt-4">
-                <label className="text-xs font-bold text-slate-400 uppercase">Product</label>
+              <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-2">Order Items</label>
                 <div className="flex justify-between items-center">
-                  <p className="font-medium">{selectedOrder.product}</p>
-                  <p className="font-bold">${selectedOrder.totalAmount}</p>
+                  <div>
+                    <p className="font-bold text-slate-900">{selectedOrder.product}</p>
+                    <p className="text-xs text-slate-500">Quantity: {selectedOrder.quantity || 1}</p>
+                  </div>
+                  <p className="text-lg font-black text-emerald-700">${selectedOrder.totalAmount}</p>
                 </div>
               </div>
-              <Button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700" onClick={() => setSelectedOrder(null)}>Close</Button>
+
+              <div className="pt-4 border-t space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Update Order Status</label>
+                <div className="flex gap-2">
+                  {['pending', 'shipped', 'delivered', 'cancelled'].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => updateStatus(selectedOrder.id, s)}
+                      className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all border-2 ${
+                        selectedOrder.status === s 
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' 
+                        : 'bg-white border-slate-100 text-slate-400 hover:border-emerald-200'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Button className="w-full h-12 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-lg mt-2" onClick={() => setSelectedOrder(null)}>Done</Button>
             </CardContent>
           </Card>
         </div>
