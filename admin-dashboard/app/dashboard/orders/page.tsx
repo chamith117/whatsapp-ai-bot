@@ -122,7 +122,7 @@ export default function OrdersPage() {
                         <td className="py-4 text-sm text-slate-600">
                           {order.product || "Unknown Product"}
                         </td>
-                        <td className="py-4 text-sm text-slate-600 max-w-[200px] truncate">
+                        <td className="py-4 text-sm text-slate-600 max-w-[250px] whitespace-normal leading-relaxed">
                           {order.customerAddress || "No address provided"}
                         </td>
                         <td className="py-4 font-semibold text-slate-900">${order.totalAmount}</td>
