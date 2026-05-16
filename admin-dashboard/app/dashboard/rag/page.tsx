@@ -36,8 +36,8 @@ export default function RAGPage() {
       setActiveProfile(profileData.profile || "Default");
       
       // Extract unique profiles from docs + defaults
-      const existingProfiles = [...new Set(docsData.map((d: any) => d.profile).filter(Boolean))];
-      setProfiles(Array.from(new Set(["Default", ...existingProfiles, "Fashion Store", "Tech Support", "Restaurant"])));
+      const existingProfiles = [...new Set(docsData.map((d: any) => d.profile).filter(Boolean))] as string[];
+      setProfiles(Array.from(new Set(["Default", ...existingProfiles, "Fashion Store", "Tech Support", "Restaurant"])) as string[]);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
