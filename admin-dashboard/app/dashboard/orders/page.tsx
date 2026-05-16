@@ -111,7 +111,11 @@ export default function OrdersPage() {
                     const Icon = config.icon;
                     
                     return (
-                      <tr key={order.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <tr 
+                        key={order.id} 
+                        onClick={() => setSelectedOrder(order)}
+                        className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+                      >
                         <td className="py-4 font-mono text-xs text-slate-500">#{order.id.slice(-8).toUpperCase()}</td>
                         <td className="py-4">
                           <div className="font-medium text-slate-900">{order.customerName || "WhatsApp User"}</div>
@@ -122,7 +126,7 @@ export default function OrdersPage() {
                         <td className="py-4 text-sm text-slate-600">
                           {order.product || "Unknown Product"}
                         </td>
-                        <td className="py-4 text-sm text-slate-600 max-w-[250px] whitespace-normal leading-relaxed">
+                        <td className="py-4 text-sm text-slate-600 max-w-[150px] truncate">
                           {order.customerAddress || "No address provided"}
                         </td>
                         <td className="py-4 font-semibold text-slate-900">${order.totalAmount}</td>
@@ -132,12 +136,12 @@ export default function OrdersPage() {
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </span>
                         </td>
-                        <td className="py-4 text-right">
+                        <td className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
                             <select 
                               onChange={(e) => updateStatus(order.id, e.target.value)}
                               value={status}
-                              className="text-xs border rounded px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-emerald-500"
+                              className="text-xs border rounded px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-emerald-500 cursor-default"
                             >
                               <option value="pending">Pending</option>
                               <option value="shipped">Shipped</option>
