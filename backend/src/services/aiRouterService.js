@@ -120,67 +120,55 @@ const aiRouterService = {
         responseText = await groqService.chatCompletion(messages);
         
         // 5. Detect and Process Orders/Cancellations
-        if (responseText.includes('###ORDER_START###')) {
-          console.log('📦 Order tag detected in AI response!');
+        const orderMatch = responseText.match(/###ORDER_START###([\s\S]*?)###ORDER_END###/);
+        if (orderMatch) {
           try {
-            const orderMatch = responseText.match(/###ORDER_START###([\s\S]*?)###ORDER_END###/);
-            if (orderMatch) {
-              let orderJson = orderMatch[1].trim();
-              
-              // Remove potential markdown backticks
-              orderJson = orderJson.replace(/^```json/, '').replace(/```$/, '').trim();
-              
-              console.log('Parsed Order JSON:', orderJson);
-              const orderData = JSON.parse(orderJson);
-              
-              await firebaseService.createOrder({
-                ...orderData,
-                customerPhone: senderId,
-                whatsappId: senderId,
-                status: 'pending'
-              });
-              
-              // Remove the tag from the message sent to the user
-              responseText = responseText.replace(/###ORDER_START###[\s\S]*?###ORDER_END###/, '').trim();
-              console.log('✅ Order created and tag removed from response.');
-            }
-          } catch (orderError) {
-            console.error('❌ Error processing order tag:', orderError.message);
+            let orderJson = orderMatch[1].trim();
+            orderJson = orderJson.replace(/^```json/, '').replace(/```$/, '').trim();
+            const orderData = JSON.parse(orderJson);
+            await firebaseService.createOrder({
+              ...orderData,
+              customerPhone: senderId,
+              whatsappId: senderId,
+              status: 'pending'
+            });
+            console.log('✅ Order created.');
+          } catch (e) {
+            console.error('❌ Order Parse Error:', e.message);
           }
         }
 
-        if (responseText.includes('###CANCEL_ORDER###')) {
+        const cancelMatch = responseText.match(/###CANCEL_ORDER###([\s\S]*?)(?:###|$)/);
+        if (cancelMatch) {
           try {
-            const cancelParts = responseText.split('###CANCEL_ORDER###');
-            const cancelJson = cancelParts[1].split('###')[0];
-            let cancelData = JSON.parse(cancelJson);
-            
-            let orderIdToCancel = cancelData.id;
-            
-            // If the AI used a placeholder or missing ID, find the latest pending order
-            if (!orderIdToCancel || orderIdToCancel === "ORDER_ID_HERE") {
-              const latestOrder = await firebaseService.getLatestOrder(senderId);
-              if (latestOrder && latestOrder.status === 'pending') {
-                orderIdToCancel = latestOrder.id;
-              }
+            let cancelJson = cancelMatch[1].trim();
+            cancelJson = cancelJson.replace(/^```json/, '').replace(/```$/, '').trim();
+            const cancelData = JSON.parse(cancelJson);
+            let orderId = cancelData.id;
+            if (!orderId || orderId === "ORDER_ID_HERE") {
+              const latest = await firebaseService.getLatestOrder(senderId);
+              if (latest && latest.status === 'pending') orderId = latest.id;
             }
-
-            if (orderIdToCancel && orderIdToCancel !== "ORDER_ID_HERE") {
-              await firebaseService.cancelOrder(orderIdToCancel);
-              console.log(`🗑️ Order ${orderIdToCancel} cancelled successfully.`);
-            } else {
-              console.warn('⚠️ Could not find a valid order ID to cancel.');
-            }
-            
-            responseText = cancelParts[0].trim();
-          } catch (cancelError) {
-            console.error('Error processing cancel tag:', cancelError);
+            if (orderId && orderId !== "ORDER_ID_HERE") await firebaseService.cancelOrder(orderId);
+          } catch (e) {
+            console.error('❌ Cancel Parse Error:', e.message);
           }
         }
 
-        // 6. Save History
-        firebaseService.saveChatMessage(senderId, { from: 'user', text: userQuery, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
-        firebaseService.saveChatMessage(senderId, { from: 'bot', text: responseText, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
+        // 6. FINAL CLEANUP: Force remove ALL technical tags from the final text
+        responseText = responseText
+          .replace(/###ORDER_START###[\s\S]*?###ORDER_END###/g, '')
+          .replace(/###CANCEL_ORDER###[\s\S]*?(?:###|$)/g, '')
+          .replace(/```json[\s\S]*?```/g, '')
+          .trim();
+
+        // 7. Save History
+        if (userQuery) {
+          firebaseService.saveChatMessage(senderId, { from: 'user', text: userQuery, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
+        }
+        if (responseText) {
+          firebaseService.saveChatMessage(senderId, { from: 'bot', text: responseText, timestamp: new Date().toISOString() }).catch(e => console.error('Save error:', e));
+        }
 
       }
  else if (message.type === 'image') {
