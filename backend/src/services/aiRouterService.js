@@ -155,11 +155,18 @@ const aiRouterService = {
           }
         }
 
-        // 6. FINAL CLEANUP: Force remove ALL technical tags from the final text
+        // 6. FINAL CLEANUP: Aggressively remove ALL technical tags and leftovers
         responseText = responseText
+          // Remove complete tags
           .replace(/###ORDER_START###[\s\S]*?###ORDER_END###/g, '')
-          .replace(/###CANCEL_ORDER###[\s\S]*?(?:###|$)/g, '')
+          .replace(/###CANCEL_ORDER###[\s\S]*?###/g, '')
+          // Remove stray/incomplete tags just in case
+          .replace(/###ORDER_START###[\s\S]*/g, '') // Remove everything after a stray start tag
+          .replace(/###CANCEL_ORDER###[\s\S]*/g, '') // Remove everything after a stray cancel tag
+          .replace(/###ORDER_END###/g, '')
+          .replace(/###/g, '')
           .replace(/```json[\s\S]*?```/g, '')
+          .replace(/```[\s\S]*?```/g, '') // Remove any other code blocks
           .trim();
 
         // 7. Save History

@@ -29,13 +29,17 @@ const firebaseService = {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   },
   createOrder: async (data) => {
+    // Standardize data types
+    const amount = Number(data.totalAmount) || 0;
+    const qty = Number(data.quantity) || 1;
+
     // Prevent duplicate orders (Idempotency check)
     // Check if an order with same product and amount exists for this user in the last 2 minutes
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const existingOrders = await db.collection('orders')
       .where('whatsappId', '==', data.whatsappId)
       .where('product', '==', data.product)
-      .where('totalAmount', '==', data.totalAmount)
+      .where('totalAmount', '==', amount)
       .where('createdAt', '>=', twoMinutesAgo)
       .get();
 
@@ -46,6 +50,8 @@ const firebaseService = {
 
     const orderData = {
       ...data,
+      totalAmount: amount,
+      quantity: qty,
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
