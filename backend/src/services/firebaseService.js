@@ -83,6 +83,10 @@ const firebaseService = {
     await db.collection('orders').doc(orderId).update({ status: 'cancelled' });
     return true;
   },
+  deleteOrder: async (orderId) => {
+    await db.collection('orders').doc(orderId).delete();
+    return true;
+  },
 
   // Chats/Sessions
   saveChatMessage: async (whatsappId, message) => {

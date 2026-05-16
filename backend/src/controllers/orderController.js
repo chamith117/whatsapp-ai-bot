@@ -38,6 +38,15 @@ const orderController = {
       console.error('❌ Order Status Update Error:', error);
       res.status(500).json({ error: error.message });
     }
+  },
+  deleteOrder: async (req, res) => {
+    try {
+      const { id } = req.params;
+      await firebaseService.deleteOrder(id);
+      res.json({ message: 'Order deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 };
 
