@@ -6,6 +6,7 @@ const aiRoutes = require('./routes/ai');
 const orderRoutes = require('./routes/orders');
 const productRoutes = require('./routes/products');
 const chatRoutes = require('./routes/chats');
+const customerRoutes = require('./routes/customers');
 
 const app = express();
 
