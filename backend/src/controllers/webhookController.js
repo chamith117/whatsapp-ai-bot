@@ -1,6 +1,12 @@
 const aiRouterService = require('../services/aiRouterService');
 const env = require('../config/env');
 
+const processedMessages = new Set();
+// Periodically clear cache every 10 minutes to avoid memory leaks
+setInterval(() => {
+  processedMessages.clear();
+}, 10 * 60 * 1000);
+
 const webhookController = {
   verifyWebhook: (req, res) => {
     const mode = req.query['hub.mode'];
@@ -35,7 +41,16 @@ const webhookController = {
         body.entry[0].changes[0].value.messages[0]
       ) {
         const message = body.entry[0].changes[0].value.messages[0];
+        const messageId = message.id;
         const senderId = message.from;
+
+        if (processedMessages.has(messageId)) {
+          console.log(`Duplicate WhatsApp message ID detected: ${messageId}. Skipping processing.`);
+          res.sendStatus(200);
+          return;
+        }
+
+        processedMessages.add(messageId);
 
         // Process message asynchronously to return 200 OK instantly to WhatsApp and prevent webhook retry storms
         aiRouterService.handleIncomingMessage(senderId, message).catch(err => {
