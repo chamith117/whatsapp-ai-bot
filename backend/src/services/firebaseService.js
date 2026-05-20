@@ -34,46 +34,54 @@ const firebaseService = {
     const qty = Number(data.quantity) || 1;
 
     // Prevent duplicate orders (Idempotency check)
-    // Check if an order with same product and amount exists for this user in the last 2 minutes
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-    const existingOrders = await db.collection('orders')
+    // Fetch recent orders by whatsappId and filter in memory to avoid composite index errors
+    const snapshot = await db.collection('orders')
       .where('whatsappId', '==', data.whatsappId)
-      .where('product', '==', data.product)
-      .where('totalAmount', '==', amount)
-      .where('createdAt', '>=', twoMinutesAgo)
       .get();
+      
+    const twoMinutesAgoMs = Date.now() - 2 * 60 * 1000;
+    const isDuplicate = snapshot.docs.some(doc => {
+      const order = doc.data();
+      const orderTimeMs = new Date(order.createdAt).getTime();
+      return order.product === data.product && 
+             order.totalAmount === amount && 
+             orderTimeMs >= twoMinutesAgoMs;
+    });
 
-    if (!existingOrders.empty) {
+    if (isDuplicate) {
       console.log('🚫 Duplicate order detected, skipping creation.');
-      return { id: existingOrders.docs[0].id, ...existingOrders.docs[0].data(), duplicate: true };
+      return { duplicate: true };
     }
 
     const orderData = {
       ...data,
       totalAmount: amount,
       quantity: qty,
-      status: 'pending',
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
+    
     const docRef = await db.collection('orders').add(orderData);
     return { id: docRef.id, ...orderData };
   },
   updateOrderStatus: async (id, status) => {
     const docRef = db.collection('orders').doc(id);
-    await docRef.update({ status });
+    await docRef.update({ status, updatedAt: new Date().toISOString() });
     const updatedDoc = await docRef.get();
     return { id: updatedDoc.id, ...updatedDoc.data() };
   },
   getLatestOrder: async (whatsappId) => {
+    // Fetch all orders for this user and sort in memory to avoid composite index errors
     const snapshot = await db.collection('orders')
       .where('whatsappId', '==', whatsappId)
-      .orderBy('createdAt', 'desc')
-      .limit(1)
       .get();
     
     if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() };
+    
+    const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    return orders[0];
   },
   cancelOrder: async (orderId) => {
     if (!orderId || orderId === "ORDER_ID_HERE") {
