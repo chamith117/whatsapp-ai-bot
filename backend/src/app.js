@@ -38,6 +38,7 @@ app.use('/ai', aiRoutes);
 app.use('/orders', orderRoutes);
 app.use('/products', productRoutes);
 app.use('/chats', chatRoutes);
+app.use('/customers', customerRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

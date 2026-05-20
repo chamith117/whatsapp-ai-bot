@@ -62,8 +62,48 @@ const firebaseService = {
     };
     
     const docRef = await db.collection('orders').add(orderData);
+
+    // Track Customer for Repeat Buyer & Discounts
+    try {
+      const customerRef = db.collection('customers').doc(data.whatsappId);
+      const customerDoc = await customerRef.get();
+      if (customerDoc.exists) {
+        await customerRef.update({
+          orderCount: (customerDoc.data().orderCount || 0) + 1,
+          lastOrderDate: new Date().toISOString(),
+          name: data.customerName || customerDoc.data().name || 'Unknown'
+        });
+      } else {
+        await customerRef.set({
+          whatsappId: data.whatsappId,
+          name: data.customerName || 'Unknown',
+          orderCount: 1,
+          discount: 0,
+          lastOrderDate: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error("Error updating customer profile:", err);
+    }
+
     return { id: docRef.id, ...orderData };
   },
+  
+  // Customers
+  getAllCustomers: async () => {
+    const snapshot = await db.collection('customers').orderBy('orderCount', 'desc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  },
+  getCustomer: async (whatsappId) => {
+    const doc = await db.collection('customers').doc(whatsappId).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
+  },
+  updateCustomerDiscount: async (whatsappId, discountPercentage) => {
+    await db.collection('customers').doc(whatsappId).update({ discount: Number(discountPercentage) });
+    return true;
+  },
+
   updateOrderStatus: async (id, status) => {
     const docRef = db.collection('orders').doc(id);
     await docRef.update({ status, updatedAt: new Date().toISOString() });

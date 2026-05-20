@@ -76,6 +76,19 @@ const aiRouterService = {
         } catch (orderError) {
           console.error('⚠️ Error fetching latest order:', orderError.message);
         }
+
+        // 1d. Fetch Customer Profile (Loyalty & Discounts)
+        let customerInfo = "Loyalty Profile: New customer.";
+        let activeDiscount = 0;
+        try {
+          const customer = await firebaseService.getCustomer(senderId);
+          if (customer) {
+            activeDiscount = customer.discount || 0;
+            customerInfo = `Loyalty Profile: ${customer.orderCount} past orders. Available Discount: ${activeDiscount}%`;
+          }
+        } catch (custError) {
+          console.error('⚠️ Error fetching customer profile:', custError.message);
+        }
         
         // 3. Prepare Prompt for Groq
         const messages = [
@@ -98,6 +111,7 @@ const aiRouterService = {
           2. **Name**: Ask for **Full Name** ONLY.
           3. **Address**: Ask for **Exact Delivery Address** ONLY.
           4. **The Close (Summary)**: Show the summary: "Okay! So we've got the [Product] for [Price], shipping to [Name] at [Address]. Shall I confirm your order now? ✨"
+             **CRITICAL RULE FOR DISCOUNTS**: Check the "CUSTOMER LOYALTY PROFILE" below. If they have an active discount (e.g., 10%), YOU MUST manually calculate the final price and tell them! Example: "Since you're a loyal customer, you get ${activeDiscount}% off! 🎉 Your total is now [Discounted Price]. Shall I confirm?"
           5. **The Trigger**: ONLY if they say "Yes", "Confirm", "Perfect", etc., append the ###ORDER_START### tag.
           6. **The Hand-off**: After the tag, say: "Done! 🚀 Your order is in the system. I'll personally make sure it's packed beautifully for you!"
           
@@ -112,7 +126,7 @@ const aiRouterService = {
             - If status is "shipped" or "delivered": Tell them "I'm so sorry, but since your order is already shipped 🚚, it's a bit harder to make changes. However, please contact our support team at **+94 77 123 4567** 📲 and we will see what we can do to help you! 😊"
           
           TAG FORMAT (HIDDEN):
-          ###ORDER_START###{"product": "Name", "totalAmount": "Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
+          ###ORDER_START###{"product": "Name", "totalAmount": "Discounted Price", "quantity": 1, "customerName": "Name provided", "customerAddress": "Address provided"}###ORDER_END###
 
           BUSINESS KNOWLEDGE (from PDF):
           ${contextString}
@@ -120,6 +134,9 @@ const aiRouterService = {
           CURRENT PRODUCT CATALOG:
           ${productString}
           
+          CUSTOMER LOYALTY PROFILE:
+          ${customerInfo}
+
           CURRENT ORDER STATUS FOR THIS CUSTOMER:
           ${latestOrderInfo}` },
           ...history.filter(msg => msg && msg.text).map(msg => ({ 
