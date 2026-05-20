@@ -76,11 +76,11 @@ const firebaseService = {
     return { id: doc.id, ...doc.data() };
   },
   cancelOrder: async (orderId) => {
-    // If ID is missing or "ORDER_ID_HERE", find latest pending order
     if (!orderId || orderId === "ORDER_ID_HERE") {
       return false;
     }
-    await db.collection('orders').doc(orderId).update({ status: 'cancelled' });
+    // Delete the order completely from the database instead of just marking as cancelled
+    await db.collection('orders').doc(orderId).delete();
     return true;
   },
   deleteOrder: async (orderId) => {
