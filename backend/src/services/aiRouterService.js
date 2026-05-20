@@ -104,7 +104,7 @@ const aiRouterService = {
           CANCELLATION & CHANGE LOGIC:
           - If a customer wants to **CANCEL** their order:
             - Check the "CURRENT ORDER STATUS" below.
-            - If status is "pending": You CAN cancel it. Tell them "No problem! I've cancelled that for you. 🗑️" and append the tag: ###CANCEL_ORDER###{"id": "ORDER_ID_HERE"}###
+            - If status is "pending": You CAN cancel it. Tell them "No problem! I've cancelled that for you. 🗑️" and append the tag: ###CANCEL_ORDER###{"id": "ORDER_ID_HERE"}### (IMPORTANT: DO NOT output this tag unless they explicitly ask to cancel!).
             - If status is "shipped" or "delivered": You CANNOT cancel it. Explain: "I'm so sorry, but your order has already been shipped 🚚 and is on its way to you! We can't cancel it at this stage. 😊"
           - If a customer wants to **CHANGE** their order (e.g., different size, color, or item):
             - Check the "CURRENT ORDER STATUS" below.
@@ -135,6 +135,8 @@ const aiRouterService = {
         
         // 5. Detect and Process Orders/Cancellations
         const orderMatch = responseText.match(/###ORDER_START###([\s\S]*?)###ORDER_END###/);
+        const cancelMatch = responseText.match(/###CANCEL_ORDER###([\s\S]*?)(?:###|$)/);
+
         if (orderMatch) {
           try {
             let orderJson = orderMatch[1].trim();
@@ -150,10 +152,7 @@ const aiRouterService = {
           } catch (e) {
             console.error('❌ Order Parse Error:', e.message);
           }
-        }
-
-        const cancelMatch = responseText.match(/###CANCEL_ORDER###([\s\S]*?)(?:###|$)/);
-        if (cancelMatch) {
+        } else if (cancelMatch) {
           try {
             let cancelJson = cancelMatch[1].trim();
             cancelJson = cancelJson.replace(/^```json/, '').replace(/```$/, '').trim();
