@@ -111,8 +111,11 @@ const aiRouterService = {
           
           CURRENT ORDER STATUS FOR THIS CUSTOMER:
           ${latestOrderInfo}` },
-          ...history.map(msg => ({ role: msg.from === 'user' ? 'user' : 'assistant', content: msg.text })),
-          { role: 'user', content: userQuery }
+          ...history.filter(msg => msg && msg.text).map(msg => ({ 
+            role: msg.from === 'user' ? 'user' : 'assistant', 
+            content: String(msg.text) 
+          })),
+          { role: 'user', content: userQuery || "Hello" }
         ];
 
         // 4. Generate AI Reply
