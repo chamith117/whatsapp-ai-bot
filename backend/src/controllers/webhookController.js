@@ -37,7 +37,7 @@ const webhookController = {
         const message = body.entry[0].changes[0].value.messages[0];
         const senderId = message.from;
 
-        // Process message asynchronously
+        // Process message asynchronously to return 200 OK instantly to WhatsApp and prevent webhook retry storms
         aiRouterService.handleIncomingMessage(senderId, message).catch(err => {
           console.error('Error handling message:', err);
         });
