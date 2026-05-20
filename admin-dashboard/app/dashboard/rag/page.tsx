@@ -83,13 +83,18 @@ export default function RAGPage() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Upload failed");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || "Upload failed");
+      }
 
       setStatus({ type: 'success', message: `Knowledge added to "${activeProfile}" profile!` });
       setFile(null);
       fetchData();
     } catch (error: any) {
-      setStatus({ type: 'error', message: error.message });
+      console.error("Upload Error:", error);
+      setStatus({ type: 'error', message: error.message || "Something went wrong" });
     } finally {
       setUploading(false);
     }

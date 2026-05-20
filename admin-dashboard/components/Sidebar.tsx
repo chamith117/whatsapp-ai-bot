@@ -10,7 +10,8 @@ import {
   MessageSquare, 
   BarChart3, 
   LogOut,
-  Settings
+  Settings,
+  Users
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -20,6 +21,7 @@ const navItems = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Products", href: "/dashboard/products", icon: Package },
   { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
+  { name: "Customers", href: "/dashboard/customers", icon: Users },
   { name: "Knowledge Base", href: "/dashboard/rag", icon: BookOpen },
   { name: "Chats", href: "/dashboard/chats", icon: MessageSquare },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
