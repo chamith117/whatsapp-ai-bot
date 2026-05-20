@@ -61,7 +61,13 @@ export default function OrdersPage() {
         fetchOrders();
       }
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.warn("Backend update failed (Network Error), falling back to Firebase:", error);
+      try {
+        await updateDoc(doc(db, "orders", orderId), { status: newStatus });
+        fetchOrders();
+      } catch (fbError) {
+        console.error("Firebase fallback also failed:", fbError);
+      }
     }
   };
 
@@ -73,16 +79,23 @@ export default function OrdersPage() {
       if (backendUrl) {
         const response = await fetch(`${backendUrl}/orders/${orderId}`, { method: "DELETE" });
         if (!response.ok) throw new Error("Delete failed");
+      } else {
+        const { deleteDoc, doc } = await import("firebase/firestore");
+        await deleteDoc(doc(db, "orders", orderId));
       }
-      // Direct Firebase delete as fallback
-      const { deleteDoc, doc } = await import("firebase/firestore");
-      await deleteDoc(doc(db, "orders", orderId));
-      
       setSelectedOrder(null);
       fetchOrders();
     } catch (error) {
-      console.error("Error deleting order:", error);
-      alert("Failed to delete order.");
+      console.warn("Backend delete failed (Network Error), falling back to Firebase:", error);
+      try {
+        const { deleteDoc, doc } = await import("firebase/firestore");
+        await deleteDoc(doc(db, "orders", orderId));
+        setSelectedOrder(null);
+        fetchOrders();
+      } catch (fbError) {
+        console.error("Firebase fallback delete failed:", fbError);
+        alert("Failed to delete order.");
+      }
     }
   };
 

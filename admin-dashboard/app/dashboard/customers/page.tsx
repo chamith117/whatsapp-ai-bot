@@ -42,8 +42,17 @@ export default function CustomersPage() {
       fetchCustomers();
       setSelectedCustomer(null);
     } catch (error) {
-      console.error(error);
-      alert("Error applying discount");
+      console.warn("Backend failed, falling back to Firebase:", error);
+      try {
+        const { doc, updateDoc } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        await updateDoc(doc(db, "customers", id), { discount: Number(discount) });
+        fetchCustomers();
+        setSelectedCustomer(null);
+      } catch (fbError) {
+        console.error(fbError);
+        alert("Error applying discount");
+      }
     }
   };
 
