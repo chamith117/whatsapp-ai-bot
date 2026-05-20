@@ -21,12 +21,23 @@ const aiRouterService = {
           console.log(`Active Profile: ${activeProfile}`);
 
           console.log('Searching Pinecone with profile filter...');
-          const relevantContexts = await pineconeService.query(
+          let filter = activeProfile === 'Default' ? undefined : { profile: activeProfile };
+          let relevantContexts = await pineconeService.query(
             'business-knowledge', 
             userQuery, 
             3, 
-            { profile: activeProfile } // Filter by active business
+            filter
           );
+          
+          if (relevantContexts.length === 0 && filter) {
+            console.log("No specific contexts found for profile, falling back to global search...");
+            relevantContexts = await pineconeService.query(
+              'business-knowledge', 
+              userQuery, 
+              3, 
+              undefined
+            );
+          }
           
           contextString = relevantContexts.map(m => m.metadata?.text || "").join('\n---\n');
           console.log(`Found ${relevantContexts.length} context chunks for profile: ${activeProfile}`);
